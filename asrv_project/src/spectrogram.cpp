@@ -91,3 +91,17 @@ unsigned int Spectrogram::processData(float *buffer, unsigned int bufferLength) 
 
     return newLines;
 }
+
+void Spectrogram::removeFoot(unsigned int numLines) {
+    for (unsigned int indLine = 0; indLine < numLines; indLine++) {
+        assert(!spectrogramData.empty());
+        assert(!timeList.empty());
+        spectrogramData.pop_front();
+        timeList.pop_front();
+
+        waveEnvelopeMin.pop_front();;
+        waveEnvelopeMax.pop_front();;
+
+        footTime += deltaTime;
+    }
+}
