@@ -105,3 +105,73 @@ void Spectrogram::removeFoot(unsigned int numLines) {
         footTime += deltaTime;
     }
 }
+
+void Spectrogram::addLine(float *fourierData,
+                            unsigned int dataLength,
+                            float envMin,
+                            float envMax) {
+    std::vector<float> fourierDataVec;
+
+    if (spectrogramData.size() >= numLines) {
+        removeFoot(spectrogramData.size() - numLines + 1);
+    }
+    fourierDataVec.assign(fourierData, fourierData + dataLength);
+    spectrogramData.push_back(fourierDataVec);
+    waveEnvelopeMax.push_back(envMax);
+    waveEnvelopeMin.push_back(envMin);
+
+    headTime += deltaTime;
+    timeList.push_back(headTime);
+}
+
+void Spectrogram::FFTCompute(std::complex<float> *data,
+                               unsigned int dataLength) {
+    for (unsigned int pos= 0; pos < dataLength; pos++) {
+        unsigned int mask = dataLength;
+        unsigned int mirrormask = 1;
+        unsigned int target = 0;
+
+        while (mask != 1) {
+            mask >>= 1;
+            if (pos & mirrormask)
+                target |= mask;
+            mirrormask <<= 1;
+        }
+        if (target > pos) {
+            std::complex<float> tmp = data[pos];
+            data[pos] = data[target];
+            data[target] = tmp;
+        }
+    }
+
+    for (unsigned int step = 1; step < dataLength; step <<= 1) {
+        const unsigned int jump = step << 1;
+        const float delta = M_PI / float(step);
+        const float sine = sin(delta * 0.5);
+        const std::complex<float> mult (-2.*sine*sine, sin(delta));
+        std::complex<float> factor(1.0, 0.0);
+
+        for (unsigned int group = 0; group < step; ++group) {
+            for (unsigned int pair = group; pair < dataLength; pair += jump) {
+                const unsigned int match = pair + step;
+                const std::complex<float> prod(factor * data[match]);
+                data[match] = data[pair] - prod;
+                data[pair] += prod;
+            }
+            factor = mult * factor + factor;
+        }
+    }
+}
+
+double Spectrogram::getDeltaTime() {
+    return deltaTime;
+}
+
+double Spectrogram::getHeadTime() {
+    return headTime;
+}
+
+double Spectrogram::getFootTime() {
+    return footTime;
+}
+
