@@ -10,10 +10,12 @@ CONFIG += c++17
 
 SOURCES += \
     src/main.cpp \
-    src/mainwidget.cpp
+    src/mainwidget.cpp \
+    src/spectrogram.cpp
 
 HEADERS += \
-    src/mainwidget.h
+    src/mainwidget.h \
+    src/spectrogram.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
