@@ -379,3 +379,253 @@ void SpectrogramWidget::drawSpectrumPlot(QPainter &painter) {
         prevpixel = pixel;
     }
 }
+
+void SpectrogramWidget::renderImage(unsigned int newLines, bool redraw) {
+
+    if (image) {
+        QImage *oldimage = image;
+        image = new QImage(plotwidth, plotheight, QImage::Format_RGB32);
+        image->fill(backgroundColor);
+
+        if (layoutMode == LAYOUT_HORIZONTAL) {
+            QPainter painter(image);
+            //QImage tmpImage = oldimage->copy(newLines-1, 0, plotwidth-newLines+1, plotheight);
+            QImage tmpImage = oldimage->copy(newLines, 0, plotwidth-newLines+1, plotheight);
+            painter.drawImage(0, 0, tmpImage);
+        } else if (layoutMode == LAYOUT_VERTICAL) {
+            QPainter painter(image);
+            //QImage tmpImage = oldimage->copy(0, newLines-1, plotwidth, plotheight-newLines+1);
+            QImage tmpImage = oldimage->copy(0, newLines, plotwidth, plotheight-newLines+1);
+            painter.drawImage(0, 0, tmpImage);
+        }
+        delete oldimage;
+    } else {
+        image = new QImage(plotwidth, plotheight, QImage::Format_RGB32);
+        image->fill(backgroundColor);
+    }
+
+    unsigned int ind_line = 0;
+
+    if (redraw) {
+        newLines = spectrogram->spectrogramData.size();
+    }
+
+    std::vector<int> pixelList;
+    for (unsigned int ind_freq = 0; ind_freq < spectrogram->frequencyList.size(); ind_freq++)
+        pixelList.push_back(freqToPixel(spectrogram->frequencyList[ind_freq]));
+
+    for (std::list<std::vector<float> >::iterator it = spectrogram->spectrogramData.begin();
+         it != spectrogram->spectrogramData.end(); it++) {
+
+        if (ind_line > spectrogram->spectrogramData.size() - newLines - 1) {
+            std::vector <float> lineData = *it;
+            if (layoutMode == LAYOUT_HORIZONTAL) {
+                int prevy = plotheight;
+                float prevvalue = 0.0;
+
+                for (unsigned int ind_freq = 0; ind_freq < lineData.size()/2; ind_freq++) {
+                    int y = pixelList[ind_freq]-ploty;
+                    int x = plotwidth - spectrogram->spectrogramData.size() + ind_line;
+
+                    if (y < prevy && y > 0 && x >= 0 && x < (int)plotwidth && prevy < (int)plotheight) {
+                        float value = lineData[ind_freq];
+                        int r, g, b;
+
+                        //value = (log10(value) + 3.0) / 5.0;
+
+                        if (logScaleAmpl) {
+                            value = (1.0 / (log10(maxAmpl) - log10(minAmpl))) * ( log10(value) - log10(minAmpl) );
+                        } else {
+                            value = (value - minAmpl)/(maxAmpl - minAmpl);
+                        }
+                        if (value < 0) {
+                            value = 0.0;
+                        }
+                        if (value > 0.01) {
+
+                            for (int yi = y; yi < prevy; yi++) {
+                                float interp_value = prevvalue + (value - prevvalue) * (float)(yi - prevy)/((float)(y - prevy));
+                                evalColormap(interp_value, r, g, b);
+                                int ivalue = qRgb(r, g, b);
+
+                                if (yi >= 0 && yi < (int)plotheight)
+                                    image->setPixel(x, yi, ivalue);
+                            }
+                        }
+                        prevvalue = value;
+                    }
+                    prevy = y;
+                }
+            } else if (layoutMode == LAYOUT_VERTICAL) {
+                int prevx = 0;
+
+                for (unsigned int ind_freq = 0; ind_freq < lineData.size()/2; ind_freq++) {
+                    int x = pixelList[ind_freq]-plotx;
+                    int y = plotheight - spectrogram->spectrogramData.size() + ind_line;
+
+                    if (x > prevx && x < (int)plotwidth && y >= 0 && y < (int)plotheight && prevx < (int)plotwidth) {
+                        float value = lineData[ind_freq];
+                        int r, g, b;
+
+                        if (logScaleAmpl) {
+                            value = (1.0 / (log10(maxAmpl) - log10(minAmpl))) * ( log10(value) - log10(minAmpl) );
+                        } else {
+                            value = (value - minAmpl)/(maxAmpl - minAmpl);
+                        }
+
+                        if (value < 0) {
+                            value = 0.0;
+                        }
+                        if (value > 0.01) {
+
+                            evalColormap(value, r, g, b);
+                            int ivalue = qRgb(r, g, b);
+
+                            for (int xi = prevx; xi < x; xi++)
+                                if (xi >= 0 && xi < (int)plotwidth)
+                                    image->setPixel(xi, y, ivalue);
+                        }
+                    }
+                    prevx = x;
+                }
+
+            }
+        }
+        ind_line++;
+    }
+}
+
+void SpectrogramWidget::drawColorbarPlot(QPainter &painter) {
+    int r, g, b;
+    QPen colorPen;
+
+    int startX = plotx + plotwidth + spectrumWidth;
+    for (unsigned int y = ploty; y < ploty + plotheight; y++) {
+        float value = 1.0 - ((float)(y-ploty)) / ((float)plotheight);
+
+        evalColormap(value, r, g, b);
+        colorPen.setStyle(Qt::SolidLine);
+        colorPen.setWidth(1);
+        colorPen.setColor(QColor(r, g, b));
+        painter.setPen(colorPen);
+
+        if (drawSpectrum) {
+            painter.drawLine(startX + colorBarWidth/2, y, startX + colorBarWidth - 5, y);
+        }
+    }
+    colorPen.setColor(gridColor);
+    painter.setPen(colorPen);
+    painter.drawRect(startX + colorBarWidth/2, ploty, colorBarWidth/2 - 5 , plotheight);
+
+    float logMin = log10(minAmpl);
+    float logMax = log10(maxAmpl);
+
+    int logMinInt = (int)floor(logMin);
+    int logMaxInt = (int)floor(logMax);
+
+    if (logMinInt > logMaxInt) exit(0);
+
+    for (int logIt = logMinInt; logIt <= logMaxInt; logIt++) {
+        double value = pow(10.0, (double)logIt);
+
+        double dBvalue = 20.0 * logIt;
+        if (value >= minAmpl && value <= maxAmpl) {
+            int y = ploty + plotheight - (int)((double)plotheight) * ((double)logIt - logMin)/(logMax - logMin);
+            painter.drawLine(startX + colorBarWidth/2-5, y, startX + colorBarWidth - 5, y);
+            painter.drawText(QRect(startX-35, y-6, colorBarWidth, 20), Qt::AlignRight,
+                             QString::number((int)dBvalue) + QString(" dB"));
+        }
+    }
+}
+
+void SpectrogramWidget::refreshPixmap() {
+    pixmap = QPixmap(size());
+    pixmap.fill(backgroundColor);
+    QPainter painter(&pixmap);
+
+    if (image) {
+        painter.drawImage(plotx, ploty, *image);
+    }
+    if (drawSpectrum) {
+        drawSpectrumPlot(painter);
+    }
+    if (drawWaveform) {
+        drawWaveformPlot(painter);
+    }
+    if (drawColorbar) {
+        drawColorbarPlot(painter);
+    }
+    drawGrid(painter);
+    update();
+}
+
+void SpectrogramWidget::toggleColorbar(bool visible) {
+    drawColorbar = visible;
+    resizeEvent(0);
+}
+
+void SpectrogramWidget::toggleWaveform(bool visible) {
+    drawWaveform = visible;
+    resizeEvent(0);
+}
+
+void SpectrogramWidget::toggleSpectrum(bool visible) {
+    drawSpectrum = visible;
+    resizeEvent(0);
+}
+
+void SpectrogramWidget::toggleTimeGrid(bool visible) {
+    drawTimeGrid = visible;
+    resizeEvent(0);
+}
+
+void SpectrogramWidget::toggleFreqGrid(bool visible) {
+    drawFreqGrid = visible;
+    resizeEvent(0);
+}
+
+void SpectrogramWidget::toggleLogScaleFreq(bool logscale) {
+    logScaleFreq = logscale;
+    resizeEvent(0);
+}
+
+void SpectrogramWidget::toggleLogScaleAmpl(bool logscale) {
+    logScaleAmpl = logscale;
+    resizeEvent(0);
+}
+
+void SpectrogramWidget::setMaxFreq(double _maxFreq) {
+    maxFreq = _maxFreq;
+    refreshPixmap();
+}
+
+void SpectrogramWidget::setMinFreq(double _minFreq) {
+    minFreq = _minFreq;
+    refreshPixmap();
+}
+
+void SpectrogramWidget::setMaxAmpl(double _maxAmpl) {
+    maxAmpl = _maxAmpl;
+    refreshPixmap();
+}
+
+void SpectrogramWidget::setMinAmpl(double _minAmpl) {
+    minAmpl = _minAmpl;
+    refreshPixmap();
+}
+
+void SpectrogramWidget::setLayoutMode(unsigned int layoutMode) {
+    Q_UNUSED(layoutMode);
+}
+
+void SpectrogramWidget::processData(float *buffer, unsigned int bufferLength) {
+    unsigned int newLines = spectrogram->processData(buffer, bufferLength);
+    double minValue = 0.0;
+    for (unsigned int indBuffer = 0; indBuffer < bufferLength; indBuffer++) {
+        if (fabs(buffer[indBuffer]) > minValue)
+            minValue = fabs(buffer[indBuffer]);
+    }
+
+    renderImage(newLines, false);
+    refreshPixmap();
+}
