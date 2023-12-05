@@ -302,3 +302,38 @@ void SpectrogramWidget::drawGrid(QPainter &painter) {
         }
     }
 }
+
+void SpectrogramWidget::drawWaveformPlot(QPainter &painter) {
+    std::list<float>::iterator itMin = spectrogram->waveEnvelopeMin.end();
+    std::list<float>::iterator itMax = spectrogram->waveEnvelopeMax.end();
+
+    unsigned int pixel = 0;
+
+    if (layoutMode == LAYOUT_HORIZONTAL) {
+        pixel= plotx + plotwidth;
+    }
+    if (layoutMode == LAYOUT_VERTICAL) {
+        pixel= ploty + plotheight;
+    }
+    for (;;) {
+        if (itMin == spectrogram->waveEnvelopeMin.begin()) break;
+        if (itMax == spectrogram->waveEnvelopeMax.begin()) break;
+        if (pixel < plotx) break;
+
+        int minValue = (int)(0.5 * ((float)waveformWidth)*(*itMin));
+        int maxValue = (int)(0.5 * ((float)waveformWidth)*(*itMax));
+
+        if (layoutMode == LAYOUT_HORIZONTAL) {
+            painter.drawLine(pixel, ploty - waveformWidth / 2 + minValue,
+                             pixel, ploty - waveformWidth / 2 + maxValue);
+        }
+        if (layoutMode == LAYOUT_VERTICAL) {
+            painter.drawLine(plotx + plotwidth + waveformWidth / 2 + minValue, pixel,
+                             plotx + plotwidth + waveformWidth / 2 + maxValue, pixel);
+        }
+
+        pixel--;
+        itMin--;
+        itMax--;
+    }
+}
