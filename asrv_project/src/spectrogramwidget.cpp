@@ -337,3 +337,45 @@ void SpectrogramWidget::drawWaveformPlot(QPainter &painter) {
         itMax--;
     }
 }
+
+void SpectrogramWidget::drawSpectrumPlot(QPainter &painter) {
+    if (spectrogram->spectrogramData.empty()) return;
+
+    std::vector <float> lineData = spectrogram->spectrogramData.back();
+
+    Q_ASSERT(!spectrogram->spectrogramData.empty());
+    Q_ASSERT(spectrogram->frequencyList.size() >= lineData.size());
+    Q_ASSERT(lineData.size() > 0);
+
+    QPen thinPen;
+    thinPen.setStyle(Qt::SolidLine);
+    thinPen.setWidth(1);
+    thinPen.setColor(gridColor);
+    painter.setPen(thinPen);
+
+    float minAmplS = 100.0 * minAmpl;
+
+    unsigned int prevpixel = 0, prevvalue = 0;
+    for (unsigned int ind_freq = 0; ind_freq < lineData.size(); ind_freq++) {
+        unsigned int pixel = freqToPixel(spectrogram->frequencyList[ind_freq]);
+
+        float value = lineData[ind_freq];
+        float lvalue = (((float)spectrumWidth) / (log10(maxAmpl) - log10(minAmplS))) * ( log10(value) - log10(minAmplS) );
+        unsigned int ivalue = std::max((int) lvalue, 0);
+
+        if (layoutMode == LAYOUT_HORIZONTAL) {
+            if (ind_freq > 0 && pixel >= ploty && prevpixel >= ploty && pixel <= ploty + plotheight && prevpixel <= ploty + plotheight) {
+                painter.drawLine(plotx + plotwidth + 5, pixel,
+                                 plotx + plotwidth + ivalue + 5, pixel);
+            }
+        } else if (layoutMode == LAYOUT_VERTICAL) {
+            if (ind_freq > 0 && pixel >= plotx && prevpixel >= plotx && pixel <= plotx + plotwidth && prevpixel <= plotx + plotwidth) {
+                painter.drawLine(pixel, ploty - ivalue, prevpixel, ploty - prevvalue);
+            }
+
+        }
+
+        prevvalue = ivalue;
+        prevpixel = pixel;
+    }
+}
