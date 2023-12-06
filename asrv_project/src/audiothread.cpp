@@ -34,6 +34,7 @@ AudioThread::AudioThread(unsigned int _sampleRate,
     m_audioSource = new QAudioSource(info, formatAudio);
     m_audioSource->setBufferSize(RAW_BUFFERSIZE);
 
+    m_device = m_audioSource->start();
 }
 
 AudioThread::~AudioThread(){
@@ -56,7 +57,7 @@ void AudioThread::run() {
     float rawBuffer[RAW_BUFFERSIZE];
 
     while(!stopped) {
-        m_device = m_audioSource->start();
+        //m_device = m_audioSource->start();
 
         if(m_device->waitForReadyRead(-1)) {
             qint64 numRead = m_device->read((char*)rawBuffer, RAW_BUFFERSIZE * sizeof(float));
