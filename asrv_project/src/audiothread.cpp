@@ -8,3 +8,5 @@ AudioThread::AudioThread(unsigned int _sampleRate,
     sampleRate = _sampleRate;
     bufferSize = _bufferSize;
 }
+
+AudioThread::~AudioThread(){}
