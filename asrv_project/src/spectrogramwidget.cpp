@@ -189,8 +189,6 @@ void SpectrogramWidget::drawGrid(QPainter &painter) {
     double headTime  = spectrogram->getHeadTime();
     double timeWidth = (double)(plotwidth) * deltaTime;
 
-    //qDebug("deltaTime %f, headTime %f, timeWidth %f", deltaTime, headTime, timeWidth);
-
     QPen thickPen, thinPen, dashPen;
     thinPen.setStyle(Qt::SolidLine);
     thinPen.setWidth(1);
