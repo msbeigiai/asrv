@@ -29,12 +29,13 @@ AudioThread::AudioThread(unsigned int _sampleRate,
 
     QAudioDevice info(QMediaDevices::defaultAudioInput());
 
-    m_audioInput = new QAudioInput(info/*, this*/);
+    m_audioInput = new QAudioInput(info, this);
 
     m_audioSource = new QAudioSource(info, formatAudio);
     m_audioSource->setBufferSize(RAW_BUFFERSIZE);
 
     m_device = m_audioSource->start();
+    m_device->open(QIODevice::WriteOnly);
 }
 
 AudioThread::~AudioThread(){
