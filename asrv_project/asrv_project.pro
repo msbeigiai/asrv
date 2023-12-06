@@ -11,13 +11,13 @@ CONFIG += c++17
 SOURCES += \
     src/audiothread.cpp \
     src/main.cpp \
-    src/mainwidget.cpp \
+    src/mainwindow.cpp \
     src/spectrogram.cpp \
     src/spectrogramwidget.cpp
 
 HEADERS += \
     src/audiothread.h \
-    src/mainwidget.h \
+    src/mainwindow.h \
     src/spectrogram.h \
     src/spectrogramwidget.h
 
