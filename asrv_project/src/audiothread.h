@@ -17,8 +17,33 @@ public:
 
     ~AudioThread();
 
+    void stop();
+
     unsigned int sampleRate;
     unsigned int bufferSize;
+
+signals:
+    void bufferFilled(float *outputBufferLeft,
+                      unsigned int bufferLength);
+
+protected:
+    void run() override;
+
+private:
+    volatile bool stopped;
+    float *bufferLeft, *bufferRight;
+    float *copyBufferLeft, *copyBufferRight;
+
+    unsigned int bufferIndex;
+
+
+    QAudioInput *m_audioInput = nullptr;
+    QAudioSource* m_audioSource = nullptr;
+    QIODevice* m_device = nullptr;
+
+
+private:
+
 };
 
 #endif // AUDIOTHREAD_H
