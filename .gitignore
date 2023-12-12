@@ -72,5 +72,10 @@ CMakeLists.txt.user*
 *.dll
 *.exe
 
-/build-asrv_project-Desktop_Qt_6_6_1_MinGW_64_bit-Debug
+/**-Debug
+/asrv_project/debug
+/asrv_project/release
+/asrv_project/x64
+/asrv_project/.qmake.*
+/asrv_project/**.qt**
 
