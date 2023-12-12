@@ -17,6 +17,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_audioThread->start();
 
     // TODO
+    // Communicate with AudioThread object
     connect(m_audioThread, SIGNAL(bufferFilled(float*,uint)),
             m_spectrogramWidget, SLOT(processData(float*,uint)));
 }
