@@ -172,7 +172,7 @@ int SpectrogramWidget::timeToPixel(double time) {
         double b = plotwidth / timeWidth;
         double a = plotx + plotwidth - b * headTime;
 
-        double x_double = a  + b * (time - timeScroll);
+        double x_double = a + b * (time - timeScroll);
         return (int) x_double;
     } else if (layoutMode == LAYOUT_VERTICAL) {
         double b = plotheight / timeWidth;
