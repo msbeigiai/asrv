@@ -83,6 +83,7 @@ void AudioThread::run() {
                             copyBufferRight[ind] = bufferRight[ind];
                         }
 
+                        // Emmits the buffers and buffer size that receives 
                         emit bufferFilled(copyBufferLeft,  bufferSize);
                         bufferIndex = 0;
                     }
