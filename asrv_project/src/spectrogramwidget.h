@@ -95,6 +95,7 @@ private:
     bool drawWaveform;
 
     QImage *image;
+    // shows image on screen
     QPixmap pixmap;
     QColor backgroundColor;
     QColor gridColor;
