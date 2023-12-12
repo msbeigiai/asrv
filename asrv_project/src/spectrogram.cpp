@@ -124,6 +124,7 @@ void Spectrogram::addLine(float *fourierData,
     timeList.push_back(headTime);
 }
 
+// Uses Cooley-Turkey alg to caclulate FFT --> O(N log N) to O(N)
 void Spectrogram::FFTCompute(std::complex<float> *data,
                                unsigned int dataLength) {
     for (unsigned int pos= 0; pos < dataLength; pos++) {
